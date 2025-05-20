@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import api from '../api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -24,7 +33,8 @@ export default function LoginScreen({ navigation }: Props) {
 
       const { token, user } = response.data;
 
-      // Você pode salvar esse token com AsyncStorage, se quiser persistência
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
 
       navigation.navigate('Home');
     } catch (error: any) {
@@ -34,7 +44,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Bem-vinda!</Text>
 
       <TextInput
@@ -56,16 +66,20 @@ export default function LoginScreen({ navigation }: Props) {
         onChangeText={setPassword}
       />
 
-<TouchableOpacity onPress={() => navigation.navigate('Register')}>
-  <Text style={{ color: '#3B82F6', marginTop: 10 }}>Criar nova conta</Text>
-</TouchableOpacity>
-    </View>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Entrar</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={{ color: '#3B82F6', marginTop: 10 }}>Criar nova conta</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',

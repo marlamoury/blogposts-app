@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.15.6:8000/api'; // 🔁 Altere para o IP da sua máquina
+const API_URL = 'http://192.168.15.8:8000/api'; // ✅ use seu IP local aqui
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 5000, // opcional, tempo de espera de resposta
+  timeout: 10000, // ⏱ aumenta para evitar erro de timeout
 });
 
 export default api;

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
@@ -19,9 +20,10 @@ interface Post {
   id: number;
   title: string;
   content: string;
-  author: {
-    nome: string;
-    email: string;
+  author?: {
+    nome?: string;
+    username?: string;
+    avatarUrl?: string;
   };
 }
 
@@ -33,16 +35,11 @@ export default function HomeScreen({ navigation }: Props) {
   const fetchPosts = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-
       const response = await api.get('/posts', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        params: {
-          query: search,
-        },
       });
-
       setPosts(response.data);
     } catch (error) {
       console.error('Erro ao buscar posts:', error);
@@ -53,87 +50,136 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     fetchPosts();
-  }, [search]);
+  }, []);
+
+  const filteredPosts = posts.filter(post =>
+    post.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   const renderItem = ({ item }: { item: Post }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => {
-        // Navegar para detalhes no futuro
-      }}
-    >
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <Image
+          source={{
+            uri: item.author?.avatarUrl || 'https://via.placeholder.com/40',
+          }}
+          style={styles.avatar}
+        />
+        <View style={styles.userInfo}>
+          <Text style={styles.name}>{item.author?.nome ?? 'Autor desconhecido'}</Text>
+          <Text style={styles.username}>@{item.author?.username ?? 'usuario'}</Text>
+        </View>
+        <TouchableOpacity style={styles.favoriteIcon}>
+          <Text style={{ fontSize: 20 }}>☆</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.content} numberOfLines={3}>
-        {item.content}
-      </Text>
-      <Text style={styles.author}>por {item.author.nome}</Text>
-    </TouchableOpacity>
+      <Text style={styles.content} numberOfLines={2}>{item.content}</Text>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Publicações</Text>
-
       <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar por título ou conteúdo..."
+        style={styles.search}
+        placeholder="Buscar post..."
         value={search}
         onChangeText={setSearch}
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#3B82F6" style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" color="#007AFF" />
       ) : (
         <FlatList
-          data={posts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
       )}
 
       <TouchableOpacity
-        style={styles.fab}
+        style={styles.floatingButton}
         onPress={() => navigation.navigate('CreatePost')}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Text style={styles.plusIcon}>＋</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', marginTop: 50 },
-  searchInput: {
-    height: 45,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginVertical: 15,
-    paddingHorizontal: 10,
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 16,
   },
-  list: { paddingBottom: 100 },
-  card: {
-    backgroundColor: '#F1F5F9',
+  search: {
+    height: 40,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    padding: 15,
+    marginBottom: 16,
+  },
+  card: {
+    backgroundColor: '#f9f9f9',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-  content: { color: '#334155' },
-  author: { marginTop: 8, fontStyle: 'italic', color: '#64748B' },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30,
-    backgroundColor: '#3B82F6',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 10,
   },
-  fabText: { fontSize: 30, color: '#fff', lineHeight: 34 },
+  userInfo: {
+    flex: 1,
+  },
+  name: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  username: {
+    color: '#666',
+    fontSize: 13,
+  },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  content: {
+    fontSize: 14,
+    color: '#333',
+  },
+  favoriteIcon: {
+    paddingHorizontal: 6,
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#007AFF',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+  },
+  plusIcon: {
+    fontSize: 32,
+    color: '#fff',
+  },
 });
